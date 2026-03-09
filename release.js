@@ -55,7 +55,8 @@ if (appcast.downloadURL.includes('YOUR_GITHUB_USERNAME')) {
 } else {
   // Try to update the version in the URL
   // Regex to match /v1.0.0/ or /1.0.0/
-  appcast.downloadURL = appcast.downloadURL.replace(/\/v?[\d\.]+\//, `/v${version}/`);
+  // Use simple version number without 'v' prefix to match user's GitHub release convention
+  appcast.downloadURL = appcast.downloadURL.replace(/\/v?[\d\.]+\//, `/${version}/`);
 }
 
 fs.writeFileSync(appcastFile, JSON.stringify(appcast, null, 2));
@@ -70,8 +71,8 @@ Next steps:
    git push
 
 2. Create a Release on GitHub:
-   - Tag: v${version}
-   - Title: v${version}
+   - Tag: ${version} (WITHOUT 'v' prefix)
+   - Title: ${version}
    - Upload "${zipName}" as a binary asset.
 
 3. The plugin will now update automatically for users!
