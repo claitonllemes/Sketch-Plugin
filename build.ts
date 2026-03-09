@@ -7,28 +7,43 @@ const scriptName = "script.js";
 
 const manifest = {
   "name": "Tailwind Colors",
-  "description": "Importa todas as cores oficiais do Tailwind CSS 4 como Color Variables no documento",
+  "description": "Importa todas as cores e sombras oficiais do Tailwind CSS 4 como Color Variables e Layer Styles no documento",
   "author": "Claiton Lemes",
   "authorEmail": "contato@claitonlemes.com.br",
   "homepage": "",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "identifier": "tailwind-colors",
   "appcast": "https://raw.githubusercontent.com/claitonllemes/Sketch-Plugin/main/.appcast.json",
   "compatibleVersion": "70",
   "icon": "icon.png",
   "commands": [
     {
-      "name": "Importar Tailwind Colors",
-      "identifier": "tailwind-colors.import",
+      "name": "❇️ Importar Tudo",
+      "identifier": "tailwind-colors.import-all",
       "script": "script.js",
       "shortcut": "ctrl shift t",
-      "handler": "onRun"
+      "handler": "onImportAll"
+    },
+    {
+      "name": "🔘 Importar Cores",
+      "identifier": "tailwind-colors.import-colors",
+      "script": "script.js",
+      "handler": "onImportColors"
+    },
+    {
+      "name": "🔘 Importar Sombras",
+      "identifier": "tailwind-colors.import-shadows",
+      "script": "script.js",
+      "handler": "onImportShadows"
     }
   ],
   "menu": {
     "title": "Tailwind Colors",
     "items": [
-      "tailwind-colors.import"
+      "tailwind-colors.import-all",
+      "-",
+      "tailwind-colors.import-colors",
+      "tailwind-colors.import-shadows"
     ]
   }
 };
@@ -77,11 +92,12 @@ try {
       let content = fs.readFileSync(scriptPath, 'utf8');
       
       // Replace ESM import with CommonJS require
-      content = content.replace(/import\s+sketch\s+from\s+['"]sketch['"];?/g, 'var sketch = require("sketch");');
+      // Handles: import sketch from 'sketch' OR import sketch2 from 'sketch'
+      content = content.replace(/import\s+(\w+)\s+from\s+['"]sketch['"];?/g, 'var $1 = require("sketch");');
       
-      // Ensure onRun is exposed properly if needed, but globalThis.onRun is usually fine.
-      // However, sometimes Sketch prefers explicit var at top level if it's a simple script.
-      // But let's trust globalThis for now or add a fallback.
+      // Remove ESM exports
+      content = content.replace(/export\s+\{[\s\S]*?\};?/g, '');
+      content = content.replace(/export\s+default\s+[\w_]+;?/g, '');
       
       fs.writeFileSync(scriptPath, content);
       console.log('Fixed imports for Sketch compatibility');
