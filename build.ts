@@ -11,7 +11,7 @@ const manifest = {
   "author": "Claiton Lemes",
   "authorEmail": "contato@claitonlemes.com.br",
   "homepage": "",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "identifier": "tailwind-colors",
   "appcast": "https://raw.githubusercontent.com/claitonllemes/Sketch-Plugin/main/.appcast.json",
   "compatibleVersion": "70",
