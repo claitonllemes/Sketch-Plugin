@@ -63,7 +63,7 @@ try {
     naming: scriptName,
     target: 'browser',
     external: ['sketch'],
-  }).then(result => {
+  }).then(async result => {
     if (!result.success) {
       console.error("Build failed");
       for (const message of result.logs) {
@@ -71,6 +71,21 @@ try {
       }
     } else {
       console.log(`Created ${scriptName} from src/main.ts`);
+      
+      // Post-process to fix Sketch compatibility
+      const scriptPath = path.join(sketchDir, scriptName);
+      let content = fs.readFileSync(scriptPath, 'utf8');
+      
+      // Replace ESM import with CommonJS require
+      content = content.replace(/import\s+sketch\s+from\s+['"]sketch['"];?/g, 'var sketch = require("sketch");');
+      
+      // Ensure onRun is exposed properly if needed, but globalThis.onRun is usually fine.
+      // However, sometimes Sketch prefers explicit var at top level if it's a simple script.
+      // But let's trust globalThis for now or add a fallback.
+      
+      fs.writeFileSync(scriptPath, content);
+      console.log('Fixed imports for Sketch compatibility');
+      
       console.log('Plugin created successfully!');
     }
   });
