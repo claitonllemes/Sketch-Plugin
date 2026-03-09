@@ -1,15 +1,23 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+/// <reference types="bun-types" />
+import fs from 'fs';
+import { execSync } from 'child_process';
 
 const pluginName = "Tailwind Colors.sketchplugin";
 const zipName = "Tailwind.Colors.sketchplugin.zip";
 const appcastFile = ".appcast.json";
 
+interface Appcast {
+  versionID?: string;
+  downloadFileSize?: number;
+  creationDate?: string;
+  downloadURL: string;
+  [key: string]: any;
+}
+
 // 1. Build
 console.log('🏗️  Building plugin...');
 try {
-  execSync('bun build.js', { stdio: 'inherit' });
+  execSync('bun build.ts', { stdio: 'inherit' });
 } catch (e) {
   console.error('❌ Build failed');
   process.exit(1);
@@ -34,14 +42,16 @@ console.log('📝 Updating appcast...');
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const version = packageJson.version;
 
-let appcast = {};
+let appcast: Appcast = { downloadURL: '' };
 if (fs.existsSync(appcastFile)) {
   appcast = JSON.parse(fs.readFileSync(appcastFile, 'utf8'));
 }
 
 // Update fields
 appcast.versionID = version;
-appcast.downloadFileSize = fs.statSync(zipName).size;
+if (fs.existsSync(zipName)) {
+    appcast.downloadFileSize = fs.statSync(zipName).size;
+}
 appcast.creationDate = new Date().toUTCString();
 
 // Replace placeholders in downloadURL if they exist, or update version

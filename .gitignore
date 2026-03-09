@@ -3,6 +3,7 @@
 
 # Bun
 bun.lockb
+bun.lock
 .bun/
 
 # Node.js

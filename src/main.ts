@@ -1,45 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+import sketch from 'sketch'
 
-const pluginName = "Tailwind Colors";
-const identifier = "com.claitonlemes.tailwindcolors";
-const scriptName = "script.js";
+function onRun(context: any) {
+  const UI = sketch.UI
+  const doc = sketch.getSelectedDocument()
 
-const manifest = {
-  "name": "Tailwind Colors",
-  "description": "Importa todas as cores oficiais do Tailwind CSS 4 como Color Variables no documento",
-  "author": "Claiton Lemes",
-  "authorEmail": "contato@claitonlemes.com.br",
-  "homepage": "",
-  "version": "1.1.0",
-  "identifier": "tailwind-colors",
-  "appcast": "https://raw.githubusercontent.com/claitonllemes/Sketch-Plugin/main/.appcast.json",
-  "compatibleVersion": "70",
-  "icon": "icon.png",
-  "commands": [
-    {
-      "name": "Importar Tailwind Colors",
-      "identifier": "tailwind-colors.import",
-      "script": "script.js",
-      "shortcut": "ctrl shift t",
-      "handler": "onRun"
-    }
-  ],
-  "menu": {
-    "title": "Tailwind Colors",
-    "items": [
-      "tailwind-colors.import"
-    ]
-  }
-};
-
-const scriptContent = `
-var onRun = function(context) {
-  const sketchModule = require('sketch')
-  const UI = sketchModule.UI
-  const doc = sketchModule.getSelectedDocument()
-
-  function oklchToHex(L, C, H) {
+  function oklchToHex(L: number, C: number, H: number): string {
     L = L / 100
     const h = H * Math.PI / 180
     const a = C * Math.cos(h)
@@ -53,7 +18,7 @@ var onRun = function(context) {
     let r =  4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s
     let g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s
     let bv = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
-    function gamma(c) {
+    function gamma(c: number): number {
       c = Math.min(1, Math.max(0, c))
       return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1/2.4) - 0.055
     }
@@ -65,8 +30,14 @@ var onRun = function(context) {
 
   const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]
 
+  interface PaletteEntry {
+    group: string;
+    special?: { name: string; hex: string }[];
+    values?: [number, number, number][];
+  }
+
   // ✅ Tailwind Colors
-  const palette = [
+  const palette: PaletteEntry[] = [
     { group: '01 - Base', special: [
       { name: '01 - Base/Black', hex: '#000000' },
       { name: '01 - Base/White', hex: '#ffffff' },
@@ -103,23 +74,23 @@ var onRun = function(context) {
   const tailwindGroups = palette.map(p => p.group)
 
   // ✅ Filtra swatches existentes que NÃO pertencem ao Tailwind (preserva cores do usuário)
-  const userSwatches = doc.swatches.filter(swatch => 
+  const userSwatches = doc.swatches.filter((swatch: any) => 
     !tailwindGroups.some(group => swatch.name.startsWith(group))
   )
 
-  const newSwatches = []
+  const newSwatches: any[] = []
   let count = 0
 
   palette.forEach(entry => {
     if (entry.special) {
       entry.special.forEach(({ name, hex }) => {
-        newSwatches.push(sketchModule.Swatch.from({ name, color: hex }))
+        newSwatches.push(sketch.Swatch.from({ name: name, color: hex }))
         count++
       })
-    } else {
+    } else if (entry.values) {
       entry.values.forEach((oklch, i) => {
-        newSwatches.push(sketchModule.Swatch.from({
-          name: \`\${entry.group}/\${shades[i]}\`,
+        newSwatches.push(sketch.Swatch.from({
+          name: `${entry.group}/${shades[i]}`,
           color: oklchToHex(oklch[0], oklch[1], oklch[2])
         }))
         count++
@@ -130,38 +101,11 @@ var onRun = function(context) {
   // ✅ Combina cores do usuário + novas cores do Tailwind
   doc.swatches = userSwatches.concat(newSwatches)
 
-  UI.message(\`✅ \${count} cores Tailwind 4 importadas/atualizadas!\`)
+  UI.message(`✅ ${count} cores Tailwind 4 importadas/atualizadas!`)
 }
-`;
 
-// Create directory structure
-const pluginDir = `${pluginName}.sketchplugin`;
-const sketchDir = path.join(pluginDir, 'Contents', 'Sketch');
-const resourcesDir = path.join(pluginDir, 'Contents', 'Resources');
-
-console.log(`Creating plugin structure at ${pluginDir}...`);
-
-try {
-  fs.mkdirSync(sketchDir, { recursive: true });
-  fs.mkdirSync(resourcesDir, { recursive: true });
-
-  // Write manifest
-  fs.writeFileSync(path.join(sketchDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  console.log('Created manifest.json');
-
-  // Write script
-  fs.writeFileSync(path.join(sketchDir, scriptName), scriptContent);
-  console.log(`Created ${scriptName}`);
-
-  // Copy icon if exists
-  if (fs.existsSync('icon.png')) {
-    fs.copyFileSync('icon.png', path.join(resourcesDir, 'icon.png'));
-    console.log('Copied icon.png');
-  } else {
-    console.warn('Warning: icon.png not found in current directory.');
-  }
-
-  console.log('Plugin created successfully!');
-} catch (err) {
-  console.error('Error creating plugin:', err);
+declare global {
+  var onRun: (context: any) => void;
 }
+
+globalThis.onRun = onRun;
